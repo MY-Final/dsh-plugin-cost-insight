@@ -43,12 +43,22 @@ providers:
 /cost balance   # 仅余额
 ```
 
-> ⚠️ **extractor 是"配置即代码"**：它用 `new Function` 在插件进程内执行。只放信任来源的 extractor；M1 仅有请求超时防护。
+> ⚠️ **extractor 是"配置即代码"**：它用 `new Function` 在插件进程内执行。只放信任来源的 extractor；仅有请求超时防护。
+
+## M2（当前）：设置页 + 会话费用
+
+- **设置页** —— 设置 → 消费洞察：在 GUI 里编辑 provider / 价格表 / 预算（写入 settings 命名空间，schema 校验），不用碰 cordis.yml。
+- **账单条** —— 输入卡片下方：本次会话估算花费，超预算变警示色。
+- **花费徽标** —— 会话标题旁：本会话花费 pill（超预算警示色）。
+- **预算提示** —— 配置预算后右下角出现一枚可关闭的 `shell.overlay` 提示。
+
+会话费用 = `token-meter` 投影（未缓存输入 / 缓存读 / 缓存写 / 输出）× 价格表（每 1M token × 中转倍率，按 `defaultModel` 计价）。投影不含模型信息，因此为**估算值**。
+
+> ⚠️ 设置页可编辑需要 harness 暴露命名空间：在 `packages/host/apiproxy/src/api-proxy.ts` 的 `WEB_SETTINGS_NAMESPACES` 加一行 `'dsh-plugin-cost-insight'`（改完重启）；否则设置页渲染只读说明卡。
 
 ## Roadmap
 
-- **M2** —— 会话费用估算：价格表（模型单价 × 中转倍率）× harness 的 `token-meter` 投影；输入框账单条、会话头花费徽标、超预算 toast（`shell.overlay`）。
-- **M3** —— 成本报表视图（`conversation.view`）与报销 CSV 导出（`/cost report`）。
+- **M3** —— 成本报表视图（`conversation.view`）、`/cost report` 报销 CSV 导出、设置页内展示余额。
 
 设计细节见 [docs/PLAN.md](docs/PLAN.md)。
 
@@ -62,13 +72,13 @@ dsh plugin --profile web add /path/to/dsh-plugin-cost-insight   # 或 github:MY-
 
 ## 本地开发
 
-在 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 源码根目录直接加载插件（M1 无浏览器 UI——`/cost` 是纯 host 命令）：
+在 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 源码根目录可用 overlay 加载 host 半边；要看 M2 UI 则安装进 profile：
 
 ```sh
 pnpm dsh web --patch /absolute/path/to/dsh-plugin-cost-insight/dev/cordis.yml
 ```
 
-要测浏览器半边则安装进 profile。本仓库内：
+本仓库内：
 
 ```sh
 pnpm install --ignore-workspace   # 仓库嵌在 harness checkout 里时必须
@@ -81,10 +91,17 @@ node test/smoke.mjs
 
 ```
 src/
-├── index.ts        # 插件入口：Config（providers）+ settings 命名空间接线
+├── index.ts        # 插件入口：Config（providers/pricing/budget）+ settings 接线
 ├── balance.ts      # cc-switch 式余额查询（request + extractor，超时）
+├── cost.ts         # 共享费用估算（纯函数，对外导出供复用/测试）
 ├── commands.ts     # /cost 命令
 ├── service.ts      # 可选示例 Service（默认注释启用）
-└── hook.ts         # 可选示例 hook 权限门（默认注释启用）
+├── hook.ts         # 可选示例 hook 权限门（默认注释启用）
+└── client/         # 浏览器半边（M2 UI）
+    ├── index.ts        # 入口：绑定 settings 命名空间，组装各注册
+    ├── settings-page.ts # settings.section：provider / 价格表 / 预算编辑器
+    ├── bill-strip.ts   # composer.dock：本次会话花费 + 预算警示
+    ├── header-badge.ts # header.utilities：花费徽标
+    └── budget-toast.ts # shell.overlay：可关闭预算提示
 docs/PLAN.md        # 设计文档（模块拆解、决策、M1/M2/M3）
 ```

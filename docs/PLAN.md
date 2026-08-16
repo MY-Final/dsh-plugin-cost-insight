@@ -6,11 +6,20 @@
 
 | 模块 | 需求 | 状态 |
 |---|---|---|
-| A. 余额查询 | cc-switch 式通用模板（request + extractor JS），支持 newapi/sub2api/one-api 系与 DeepSeek 官方 | **M1（本期）** |
-| B. 会话费用 | token-meter 投影 × 价格表（模型单价 4 桶 + 中转站倍率），估算并标注 | M2 |
-| C. /cost 命令 | 余额查询（本期）+ 会话花费/导出 | M1 余额 / M2 扩展 |
-| D. 超预算 toast | client 侧算费用 + 阈值判断 → shell.overlay 浮动提醒（可关闭） | M2 |
+| A. 余额查询 | cc-switch 式通用模板（request + extractor JS），支持 newapi/sub2api/one-api 系与 DeepSeek 官方 | ✅ M1 |
+| B. 会话费用 | token-meter 投影 × 价格表（模型单价 4 桶 + 中转站倍率），估算并标注 | ✅ M2（估算，见下） |
+| C. /cost 命令 | 余额查询 | ✅ M1；会话花费/导出 M3 |
+| D. 预算提醒 | 账单条警示（session 级）+ 可关闭提示 pill（shell.overlay，root 级展示预算配置） | ✅ M2 |
 | E. 报销导出 | 会话结算落本地 JSONL，/cost report 出 CSV | M3 |
+
+## M2 已交付
+
+- **设置页（settings.section）**：设置 → 消费洞察，在线编辑 provider / 价格表 / 预算，保存按字段写入 settings 命名空间（schema 校验 + revision 围栏）。命名空间未对 Web 暴露时渲染说明卡。
+- **账单条（composer.dock）**：本次会话估算花费，超预算警示色。
+- **花费徽标（header.utilities）**：会话标题旁花费 pill，超预算警示色。
+- **预算提示（shell.overlay）**：root 级可关闭提示（展示预算配置；超限实时警示由 session 级账单条承担——root 无会话数据）。
+- **费用估算**：`src/cost.ts` 纯函数（共享导出），价格按每 1M token、乘以倍率、按 defaultModel 计价；投影不含模型信息，界面按"估算"处理。
+- **浏览器设置页需要白名单**：命名空间 `dsh-plugin-cost-insight` 需加入 harness 的 WEB_SETTINGS_NAMESPACES 才能可编辑。
 
 ## 已确认决策（2026-08-16）
 

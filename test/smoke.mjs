@@ -3,7 +3,7 @@
 // 避免与已安装的 dsh-plugin-template 重复注册。
 // 运行：node test/smoke.mjs（先 pnpm build）
 import assert from 'node:assert/strict'
-import { name, apply } from '../lib/index.js'
+import { name, apply, estimateCost, formatCost } from '../lib/index.js'
 import * as hook from '../lib/hook.js'
 
 // 最小可用的 ctx：只实现本插件用到的成员。
@@ -24,10 +24,35 @@ const ctx = {
   },
 }
 
-const config = { providers: [] }
+const config = {
+  providers: [],
+  pricing: {
+    defaultModel: 'deepseek-chat',
+    multiplier: 1,
+    currency: 'CNY',
+    models: { 'deepseek-chat': { input: 2, cacheRead: 0.5, cacheWrite: 2, output: 8 } },
+  },
+  budget: {},
+}
 apply(ctx, config)
 
 assert.equal(name, 'dsh-plugin-cost-insight')
+
+// 费用估算纯函数：1M 输入 token × 2/1M = 2；缓存读 1M × 0.5 = 0.5；倍率 ×2。
+const pricing = config.pricing
+assert.equal(
+  estimateCost({ uncachedInputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }, pricing),
+  2,
+)
+assert.equal(
+  estimateCost({ uncachedInputTokens: 0, outputTokens: 0, cacheReadTokens: 1_000_000, cacheWriteTokens: 0 }, pricing),
+  0.5,
+)
+assert.equal(
+  estimateCost({ uncachedInputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }, { ...pricing, multiplier: 2 }),
+  4,
+)
+assert.equal(formatCost(2, 'CNY'), '2.00 CNY')
 
 // settings 接线：模拟 settings 服务存在（installSettingsSection 的依赖立即满足），
 // 断言命名空间以 composition entry 为 base 层注册、/cost 命令注册到 commands 服务。

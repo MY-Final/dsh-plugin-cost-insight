@@ -43,12 +43,22 @@ Query balances from any session:
 /cost balance   # balances only
 ```
 
-> ⚠️ **The extractor is configuration-as-code**: it runs with `new Function` inside the plugin process. Only use extractors from sources you trust; M1 guards with a request timeout only.
+> ⚠️ **The extractor is configuration-as-code**: it runs with `new Function` inside the plugin process. Only use extractors from sources you trust; a request timeout is the only guard.
+
+## M2 (current): settings page & session cost
+
+- **Settings page** — Settings → 消费洞察: edit providers, the price table, and the budget in the GUI (writes to the settings namespace, schema-validated). Configure everything without touching cordis.yml.
+- **Bill strip** — under the composer: this session's estimated spend, turning warning-colored when it exceeds the budget.
+- **Spend badge** — next to the session title: this session's cost pill (warning color over budget).
+- **Budget hint** — a dismissible `shell.overlay` pill on the right edge once a budget is configured.
+
+Session cost = `token-meter` projection (uncached input / cache read / cache write / output) × price table (per 1M tokens, × relay multiplier, keyed by `defaultModel`). The projection carries no model info, so the figure is an **estimate**.
+
+> ⚠️ Editing the settings page requires the harness to expose the namespace: add `'dsh-plugin-cost-insight'` to `WEB_SETTINGS_NAMESPACES` in `packages/host/apiproxy/src/api-proxy.ts` (one line, then restart). Until then the page renders a read-only explainer.
 
 ## Roadmap
 
-- **M2** — per-session cost estimate: a price table (model prices × relay multiplier) × the harness's `token-meter` projection; a composer bill strip, a session-header spend badge, and an over-budget toast (`shell.overlay`).
-- **M3** — a cost report view (`conversation.view`) and CSV export for reimbursement (`/cost report`).
+- **M3** — a cost report view (`conversation.view`), `/cost report` CSV export for reimbursement, and balance display in the settings page.
 
 Design details: [docs/PLAN.md](docs/PLAN.md).
 
@@ -62,7 +72,7 @@ The shipped `cordis.patch.yml` carries a DeepSeek example — set a real `apiKey
 
 ## Local development
 
-From a [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) source checkout, load the plugin directly (M1 has no browser UI — `/cost` is a plain host command):
+From a [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) source checkout, load the host half via overlay; to see the M2 UI, install into a profile instead:
 
 ```sh
 pnpm dsh web --patch /absolute/path/to/dsh-plugin-cost-insight/dev/cordis.yml
@@ -81,10 +91,17 @@ node test/smoke.mjs
 
 ```
 src/
-├── index.ts        # plugin entry: Config (providers) + settings-namespace wiring
+├── index.ts        # plugin entry: Config (providers/pricing/budget) + settings wiring
 ├── balance.ts      # cc-switch-style balance query (request + extractor, timeout)
+├── cost.ts         # shared cost estimate (pure; exported for reuse/tests)
 ├── commands.ts     # /cost command
 ├── service.ts      # optional example Service (disabled by default)
-└── hook.ts         # optional example hook permission gate (disabled by default)
+├── hook.ts         # optional example hook permission gate (disabled by default)
+└── client/         # browser half (M2 UI)
+    ├── index.ts        # entry: bind settings namespace, assemble the registrations
+    ├── settings-page.ts # settings.section: providers / price table / budget editor
+    ├── bill-strip.ts   # composer.dock: per-session cost, budget warning
+    ├── header-badge.ts # header.utilities: cost pill
+    └── budget-toast.ts # shell.overlay: dismissible budget hint
 docs/PLAN.md        # design doc (modules, decisions, M1/M2/M3)
 ```
