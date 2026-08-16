@@ -1,6 +1,7 @@
 # dsh-plugin-cost-insight 的 bundle 层：安装进 profile 后由 dsh 加载。
 # 每个条目对应一个插件模块；后层按 id 覆盖前层，覆盖整行 config 而非深合并。
-# provider 配置也在这里写（M2 起提供 GUI 配置页）。通用模板参考 docs/PLAN.md。
+# provider / 价格表 / 预算也可以在 GUI 设置 → 消费洞察 里改（M2 起）。
+# 通用模板参考 docs/PLAN.md。
 - insert:
     - id: dsh-plugin-cost-insight
       name: dsh-plugin-cost-insight
@@ -25,6 +26,22 @@
                 };
               }
             unit: CNY
+        pricing:
+          defaultModel: deepseek-chat
+          multiplier: 1
+          currency: CNY
+          models:
+            deepseek-chat:
+              input: 2
+              cacheRead: 0.5
+              cacheWrite: 2
+              output: 8
+            deepseek-reasoner:
+              input: 4
+              cacheRead: 1
+              cacheWrite: 4
+              output: 16
+        budget: {}
     # 可选：示例 Service 插件（见 src/service.ts）。需要时删除下面两行注释，
     # 并确保构建产物 lib/service.js 存在（tsdown 已包含该入口）。
     # - id: dsh-plugin-cost-insight-service
