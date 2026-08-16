@@ -62,11 +62,11 @@ function BillStrip(props: {
   const over = config?.budget?.perSession !== undefined && cost > config.budget.perSession
   return React.createElement(
     'div',
-    { className: over ? 'dtpl-strip dtpl-strip-warn' : 'dtpl-strip' },
+    { className: over ? 'cis-strip cis-strip-warn' : 'cis-strip' },
     React.createElement('span', null, '本次会话'),
-    React.createElement('span', { className: 'dtpl-strip-strong' }, formatCost(cost, pricing.currency)),
+    React.createElement('span', { className: 'cis-strip-strong' }, formatCost(cost, pricing.currency)),
     over
-      ? React.createElement('span', { className: 'dtpl-strip-warn' }, `⚠ 超预算（${formatCost(config.budget!.perSession!, pricing.currency)}）`)
+      ? React.createElement('span', { className: 'cis-strip-warn' }, `⚠ 超预算（${formatCost(config.budget!.perSession!, pricing.currency)}）`)
       : null,
   )
 }

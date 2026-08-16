@@ -31,13 +31,13 @@ function BudgetToast({ scope }: { scope: SettingsScopeLike }): React.ReactElemen
   if (dismissed || budget === undefined) return null
   return React.createElement(
     'div',
-    { className: 'dtpl-overlay', role: 'status' },
+    { className: 'cis-overlay', role: 'status' },
     React.createElement('span', null, `已设置单会话预算 ${budget}；超限时输入框下方账单条会警示。`),
     React.createElement(
       'button',
       {
         type: 'button',
-        className: 'dtpl-overlay-close',
+        className: 'cis-overlay-close',
         'aria-label': '关闭预算提示',
         onClick: () => setDismissed(true),
       },

@@ -60,7 +60,7 @@ function HeaderBadge(props: {
   const over = config?.budget?.perSession !== undefined && cost > config.budget.perSession
   return React.createElement(
     'span',
-    { className: over ? 'dtpl-badge dtpl-badge-warn' : 'dtpl-badge', title: '本次会话估算花费' },
+    { className: over ? 'cis-badge cis-badge-warn' : 'cis-badge', title: '本次会话估算花费' },
     formatCost(cost, pricing.currency),
   )
 }
