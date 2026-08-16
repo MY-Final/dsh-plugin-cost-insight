@@ -2,14 +2,14 @@
  * 客户端半边入口：唯一职责是把各 UI 面的注册组装起来，并导出 cordis 加载
  * 需要的 inject / apply。每个 UI 面一个独立模块（config-card / sidebar-action /
  * input-dock / shell-overlay / header-utilities / input-left / input-right /
- * commandview / general-item / plugins-tab / settings-action / header-actions /
+ * general-item / plugins-tab / settings-action / header-actions /
  * composer-dock / assistant-actions），各自的注册函数在 apply 里按序调用。
  *
  * 关于"开箱即用"：本入口注册的插槽全部是纯声明式 UI 注册，不受 harness 的
  * WEB_SETTINGS_NAMESPACES 白名单影响——侧栏按钮、输入区 Dock、浮层、工具位
  * 装完即用；只有配置卡片的数据路径（settings 命名空间）受白名单门控，卡片
  * 本身也会渲染说明状态而不是消失。详见 docs/ui-surfaces.md。
- * @module dsh-plugin-template/client
+ * @module dsh-plugin-cost-insight/client
  */
 
 import type { Context } from '@deepseek-ai/cordis'
@@ -21,7 +21,6 @@ import { registerShellOverlay } from './shell-overlay.ts'
 import { registerHeaderUtility } from './header-utilities.ts'
 import { registerInputLeft } from './input-left.ts'
 import { registerInputRight } from './input-right.ts'
-import { registerCommandView } from './commandview.ts'
 import { registerGeneralItem } from './general-item.ts'
 import { registerPluginsTab } from './plugins-tab.ts'
 import { registerSettingsAction } from './settings-action.ts'
@@ -45,7 +44,6 @@ export function apply(ctx: Context): void {
   registerHeaderUtility(ctx)
   registerInputLeft(ctx)
   registerInputRight(ctx)
-  registerCommandView(ctx)
   registerGeneralItem(ctx)
   registerPluginsTab(ctx)
   registerSettingsAction(ctx)

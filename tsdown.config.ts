@@ -26,7 +26,7 @@ const CLIENT_EXTERNALS = ['react']
 
 /** Client 半边：浏览器配置卡片 bundle，输出 lib/client.js。 */
 const client = {
-  name: 'dsh-plugin-template/client',
+  name: 'dsh-plugin-cost-insight/client',
   entry: { client: 'src/client/index.ts' },
   outDir: 'lib',
   format: 'cjs',
@@ -42,7 +42,7 @@ const client = {
   outputOptions: {
     // 固定产物名 lib/client.js，与 package.json exports["./client"] 对应。
     entryFileNames: 'client.js',
-    banner: 'window.__ModuleLoader__.load({ id: "dsh-plugin-template", factory: (require) => {',
+    banner: 'window.__ModuleLoader__.load({ id: "dsh-plugin-cost-insight", factory: (require) => {',
     footer: 'return module.exports; } });',
     intro: 'var module = { exports: {} }; var exports = module.exports;',
   },

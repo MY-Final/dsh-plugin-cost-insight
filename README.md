@@ -1,4 +1,4 @@
-# dsh-plugin-template
+# dsh-plugin-cost-insight
 
 **English** | [简体中文](README.zh.md)
 
@@ -16,7 +16,7 @@ The template follows the official [bundle distribution model](https://github.com
 ## Directory structure
 
 ```
-dsh-plugin-template/
+dsh-plugin-cost-insight/
 ├── package.json        # npm manifest + dsh.bundle / dsh.client declarations + prepare build script
 ├── tsconfig.json       # strict type-check configuration (tsc --noEmit)
 ├── tsdown.config.ts    # build config: Node library (lib/) + client bundle (lib/client.js), self-contained for git-install prepare
@@ -59,25 +59,25 @@ From any directory, install this package (or your fork) into a dsh profile:
 
 ```sh
 # local directory
-dsh plugin --profile demo add /path/to/dsh-plugin-template
+dsh plugin --profile demo add /path/to/dsh-plugin-cost-insight
 
 # or directly from GitHub (replace with your own repo after forking)
-dsh plugin --profile demo add github:you/dsh-plugin-template
+dsh plugin --profile demo add github:you/dsh-plugin-cost-insight
 ```
 
 A GitHub install pulls **source**; pnpm runs `prepare` (i.e. `tsdown`) to build `lib/`. On pnpm ≥10 the first git-dependency prepare is refused; add the package name pnpm prints to the profile's `pnpm-workspace.yaml` and retry:
 
 ```yaml
 allowBuilds:
-  dsh-plugin-template: true
+  dsh-plugin-cost-insight: true
 ```
 
-> This allowlist authorizes executing that package's code at install time — only allow source you trust, and prefer pinning a commit: `github:you/dsh-plugin-template#<sha>`.
+> This allowlist authorizes executing that package's code at install time — only allow source you trust, and prefer pinning a commit: `github:you/dsh-plugin-cost-insight#<sha>`.
 
 Verify the config layer and boot:
 
 ```sh
-dsh --profile demo --dump-config   # should show a "# == dsh-plugin-template" layer
+dsh --profile demo --dump-config   # should show a "# == dsh-plugin-cost-insight" layer
 dsh --profile demo
 ```
 
@@ -89,13 +89,13 @@ dsh --profile demo
 From the root of a [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) source checkout, load this repo's source directly via an overlay (no install, no build):
 
 ```sh
-pnpm dsh web --patch /absolute/path/to/dsh-plugin-template/dev/cordis.yml
+pnpm dsh web --patch /absolute/path/to/dsh-plugin-cost-insight/dev/cordis.yml
 ```
 
 Set `name` in `dev/cordis.yml` to this repo's absolute path on your machine, open `http://127.0.0.1:3080`, and ask the model to call the `greet` tool.
 
 > ⚠️ A `--patch` overlay only loads the plugin's **host half** (module resolution cannot reach package-level declarations).
-> To test the browser-half config card you must install into a profile (resolved by `name: dsh-plugin-template`) — see the next section.
+> To test the browser-half config card you must install into a profile (resolved by `name: dsh-plugin-cost-insight`) — see the next section.
 
 Run the checks yourself during development:
 
@@ -114,10 +114,10 @@ The config card renders in the browser and depends on dsh's client-modules disco
 
 ```sh
 # 1. Build (produces lib/index.js + lib/client.js)
-cd /path/to/dsh-plugin-template && pnpm build
+cd /path/to/dsh-plugin-cost-insight && pnpm build
 
 # 2. Install into the web profile (= dsh-base + dsh-web-app, full GUI)
-dsh plugin --profile web add /path/to/dsh-plugin-template
+dsh plugin --profile web add /path/to/dsh-plugin-cost-insight
 
 # 3. Boot the web GUI (`dsh web` is equivalent to `dsh --profile web`)
 dsh web
@@ -125,7 +125,7 @@ dsh web
 
 Open `http://127.0.0.1:3080`:
 
-1. Bottom-left **Settings** → **Plugins** → **Configurable** tab: you should see a `dsh-plugin-template` card. On a stock harness it renders a read-only "not exposed" status card (see below); after the one-line harness change it renders the editable `greeting` / `maxRetries` / `verbose` fields;
+1. Bottom-left **Settings** → **Plugins** → **Configurable** tab: you should see a `dsh-plugin-cost-insight` card. On a stock harness it renders a read-only "not exposed" status card (see below); after the one-line harness change it renders the editable `greeting` / `maxRetries` / `verbose` fields;
 2. Change `greeting`, click **Save** — the status line should confirm it takes effect immediately;
 3. Back in a session, ask the model to call the `greet` tool — you should see the new greeting (the host half reads the resolved namespace value live, no restart);
 4. The change lands in the settings document (`settings.yaml` under `$DSH_HOME`) and survives restarts; to restore a default, edit the field back or clear it in the card.
@@ -134,19 +134,19 @@ After editing the client half (`src/client/`), rerun `pnpm build` and refresh th
 
 ### The config card on a stock harness (no source edits)
 
-The card is a browser plugin (`src/client/config-card.ts`) that binds the settings namespace `dsh-plugin-template` through the `settingsScope` service. It always renders — but on a stock harness it shows a read-only "not exposed" status card instead of editable fields. Why: dsh's web gateway serves settings namespaces only from an explicit allowlist (`WEB_SETTINGS_NAMESPACES` in `packages/host/apiproxy/src/api-proxy.ts`), and a namespace absent from it answers `settings-not-exposed` even when its owner plugin registered it. This is a harness-side registration decision (the same source comment calls moving the declaration into `settings.register()` "deferred work"), not a template defect: the built-in cards render because their namespaces (`shell`, `agent-loop`, …) are allowlisted, and there is currently no plugin-side channel to add one — the gateway's RPC map is compile-time fixed and no registration flag exists yet.
+The card is a browser plugin (`src/client/config-card.ts`) that binds the settings namespace `dsh-plugin-cost-insight` through the `settingsScope` service. It always renders — but on a stock harness it shows a read-only "not exposed" status card instead of editable fields. Why: dsh's web gateway serves settings namespaces only from an explicit allowlist (`WEB_SETTINGS_NAMESPACES` in `packages/host/apiproxy/src/api-proxy.ts`), and a namespace absent from it answers `settings-not-exposed` even when its owner plugin registered it. This is a harness-side registration decision (the same source comment calls moving the declaration into `settings.register()` "deferred work"), not a template defect: the built-in cards render because their namespaces (`shell`, `agent-loop`, …) are allowlisted, and there is currently no plugin-side channel to add one — the gateway's RPC map is compile-time fixed and no registration flag exists yet.
 
 What works on a stock harness with zero edits:
 - the entire host half — the `greet` tool, events, the service, the hook gate — including **live config reads**: writes are only gated at the web RPC, the plugin itself reads the resolved namespace value on every execution;
 - the card slot itself: the card appears under Settings → Plugins → Configurable and explains the exposure state instead of vanishing silently.
 
 To make the card editable, pick one:
-1. add `'dsh-plugin-template'` to `WEB_SETTINGS_NAMESPACES` in `packages/host/apiproxy/src/api-proxy.ts` (one line; rebuild/restart the harness; lost when you update the checkout):
+1. add `'dsh-plugin-cost-insight'` to `WEB_SETTINGS_NAMESPACES` in `packages/host/apiproxy/src/api-proxy.ts` (one line; rebuild/restart the harness; lost when you update the checkout):
 
 ```ts
 const WEB_SETTINGS_NAMESPACES = [
   'agent-loop', 'shell', 'locale', 'permission', 'ui-conversation', 'ui-theme', 'web-search-deepseek',
-  'dsh-plugin-template',   // ← add this line
+  'dsh-plugin-cost-insight',   // ← add this line
 ] as const
 ```
 
@@ -166,15 +166,15 @@ const WEB_SETTINGS_NAMESPACES = [
 
 - `package.json` declares `dsh.client: { platform: "web" }` + `exports["./client"]` → dsh's client-modules discovers it and loads `lib/client.js` as a browser plugin;
 - the client entry (`src/client/index.ts`) assembles one registration per UI surface — the config card (`settings.plugin.item`), the sidebar footer action (`sidebar.footer.action`), and the input dock (`conversation.input.dock`) — see the [UI surfaces index](docs/ui-surfaces.md);
-- the config card binds the `dsh-plugin-template` namespace via the `settingsScope` service: reads snapshots, stages drafts, and writes field-by-field on save (revision-fenced);
+- the config card binds the `dsh-plugin-cost-insight` namespace via the `settingsScope` service: reads snapshots, stages drafts, and writes field-by-field on save (revision-fenced);
 - the host half (`src/index.ts`) registers the same namespace with `installSettingsSection` (the cordis.yml config is the `base` layer) and reads the resolved value lazily in the tool → saving takes effect immediately;
 - at runtime the client half depends only on `react` (provided by the browser platform module table); everything else goes through `ctx` services and no `@deepseek-ai` client package is imported — keep that discipline when editing the template.
 
 ## Publishing
 
 - **npm**: `pnpm publish` (`files` already includes the build output and the patch; no extra steps)
-- **tarball**: `pnpm pack`, then `dsh plugin --profile demo add ./dsh-plugin-template-0.1.0.tgz`
-- **git**: `dsh plugin add github:you/dsh-plugin-template` (combined with the `allowBuilds` step above)
+- **tarball**: `pnpm pack`, then `dsh plugin --profile demo add ./dsh-plugin-cost-insight-0.1.0.tgz`
+- **git**: `dsh plugin add github:you/dsh-plugin-cost-insight` (combined with the `allowBuilds` step above)
 
 ## Related docs
 

@@ -1,4 +1,4 @@
-# dsh-plugin-template
+# dsh-plugin-cost-insight
 
 [English](README.md) | **简体中文**
 
@@ -16,7 +16,7 @@ DeepSeek Harness（`dsh`）插件模板：一个可直接运行、可直接安�
 ## 目录结构
 
 ```
-dsh-plugin-template/
+dsh-plugin-cost-insight/
 ├── package.json        # npm 包清单 + dsh.bundle / dsh.client 声明 + prepare 构建脚本
 ├── tsconfig.json       # 严格模式类型检查配置（tsc --noEmit）
 ├── tsdown.config.ts    # 构建配置：Node 库（lib/）+ 客户端 bundle（lib/client.js），自包含、供 git 安装时 prepare 使用
@@ -59,25 +59,25 @@ dsh-plugin-template/
 
 ```sh
 # 本地目录
-dsh plugin --profile demo add /path/to/dsh-plugin-template
+dsh plugin --profile demo add /path/to/dsh-plugin-cost-insight
 
 # 或直接从 GitHub 安装（模板 fork 后替换为你自己的仓库）
-dsh plugin --profile demo add github:you/dsh-plugin-template
+dsh plugin --profile demo add github:you/dsh-plugin-cost-insight
 ```
 
 GitHub 安装拉取的是**源码**，pnpm 会运行 `prepare`（即 `tsdown`）构建 `lib/`；pnpm ≥10 首次会拒绝执行 git 依赖的 prepare，把 pnpm 打印的包名加进 profile 的 `pnpm-workspace.yaml` 后重试：
 
 ```yaml
 allowBuilds:
-  dsh-plugin-template: true
+  dsh-plugin-cost-insight: true
 ```
 
-> 该 allowlist 相当于授权在安装时执行该包的代码，只应允许你信任的源码，并建议锁定 commit：`github:you/dsh-plugin-template#<sha>`。
+> 该 allowlist 相当于授权在安装时执行该包的代码，只应允许你信任的源码，并建议锁定 commit：`github:you/dsh-plugin-cost-insight#<sha>`。
 
 验证配置层并启动：
 
 ```sh
-dsh --profile demo --dump-config   # 应看到 "# == dsh-plugin-template" 层
+dsh --profile demo --dump-config   # 应看到 "# == dsh-plugin-cost-insight" 层
 dsh --profile demo
 ```
 
@@ -89,13 +89,13 @@ dsh --profile demo
 在 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 源码根目录，用 overlay 直接加载本仓库源码（免安装、免构建）：
 
 ```sh
-pnpm dsh web --patch /absolute/path/to/dsh-plugin-template/dev/cordis.yml
+pnpm dsh web --patch /absolute/path/to/dsh-plugin-cost-insight/dev/cordis.yml
 ```
 
 把 `dev/cordis.yml` 里的 `name` 改成这个仓库在你机器上的绝对路径，然后打开 `http://127.0.0.1:3080` 让模型调用 `greet` 工具试试。
 
 > ⚠️ `--patch` overlay 只加载插件的 **host 半边**（模块路径解析不到包级声明）。
-> 要测试浏览器半边的配置卡片，必须走上面的 profile 安装（包以 `name: dsh-plugin-template` 解析），见下一节。
+> 要测试浏览器半边的配置卡片，必须走上面的 profile 安装（包以 `name: dsh-plugin-cost-insight` 解析），见下一节。
 
 开发循环内自己跑检查：
 
@@ -114,10 +114,10 @@ node test/smoke.mjs
 
 ```sh
 # 1. 构建（产物 lib/index.js + lib/client.js）
-cd /path/to/dsh-plugin-template && pnpm build
+cd /path/to/dsh-plugin-cost-insight && pnpm build
 
 # 2. 装进 web profile（= dsh-base + dsh-web-app，带完整 GUI）
-dsh plugin --profile web add /path/to/dsh-plugin-template
+dsh plugin --profile web add /path/to/dsh-plugin-cost-insight
 
 # 3. 启动 web GUI（`dsh web` 等价于 `dsh --profile web`）
 dsh web
@@ -125,7 +125,7 @@ dsh web
 
 打开 `http://127.0.0.1:3080`：
 
-1. 左下角 **设置** → **插件** → **Configurable** 页，应看到一张 `dsh-plugin-template` 卡片。原版 harness 上它渲染为只读的"未暴露"状态卡（见下文）；完成 harness 一行改动后渲染为含 `greeting` / `maxRetries` / `verbose` 三个可编辑字段的表单；
+1. 左下角 **设置** → **插件** → **Configurable** 页，应看到一张 `dsh-plugin-cost-insight` 卡片。原版 harness 上它渲染为只读的"未暴露"状态卡（见下文）；完成 harness 一行改动后渲染为含 `greeting` / `maxRetries` / `verbose` 三个可编辑字段的表单；
 2. 把 `greeting` 改成别的值，点 **保存**，状态行应提示"修改后点击保存立即生效"；
 3. 回到会话，让模型调用 `greet` 工具，应看到新 greeting（host 半边实时读取命名空间解析值，无需重启）；
 4. 用户改动写进设置文档（`$DSH_HOME` 下的 `settings.yaml`），重启后依然生效；想恢复默认就在卡片里改回或清除对应字段。
@@ -134,19 +134,19 @@ dsh web
 
 ### 原版 harness 上的配置卡片（不改源码）
 
-卡片是浏览器插件（`src/client/config-card.ts`），通过 `settingsScope` 服务绑定 settings 命名空间 `dsh-plugin-template`。它在任何状态下都渲染——但原版 harness 上会渲染成只读的"未暴露"状态卡，而不是可编辑表单。原因：dsh 的 Web 网关只把白名单内的 settings 命名空间暴露给设置面板（`WEB_SETTINGS_NAMESPACES`，见 `packages/host/apiproxy/src/api-proxy.ts`），不在名单里的命名空间即使插件注册了，`settings.describe` 也会回答 `settings-not-exposed`。这是 harness 侧的注册决策点（同一段源码注释把"把暴露声明移进 `settings.register()`"标注为 deferred work），不是模板缺陷：内置卡片能渲染是因为它们的命名空间（`shell`、`agent-loop`…）在白名单里，而目前不存在插件侧把它加入白名单的通道——网关的 RPC 表是编译期固定的，也没有任何注册期标志。
+卡片是浏览器插件（`src/client/config-card.ts`），通过 `settingsScope` 服务绑定 settings 命名空间 `dsh-plugin-cost-insight`。它在任何状态下都渲染——但原版 harness 上会渲染成只读的"未暴露"状态卡，而不是可编辑表单。原因：dsh 的 Web 网关只把白名单内的 settings 命名空间暴露给设置面板（`WEB_SETTINGS_NAMESPACES`，见 `packages/host/apiproxy/src/api-proxy.ts`），不在名单里的命名空间即使插件注册了，`settings.describe` 也会回答 `settings-not-exposed`。这是 harness 侧的注册决策点（同一段源码注释把"把暴露声明移进 `settings.register()`"标注为 deferred work），不是模板缺陷：内置卡片能渲染是因为它们的命名空间（`shell`、`agent-loop`…）在白名单里，而目前不存在插件侧把它加入白名单的通道——网关的 RPC 表是编译期固定的，也没有任何注册期标志。
 
 原版 harness 上零改动即可用的部分：
 - **整个 host 半边**——`greet` 工具、事件、Service、hook 权限门，包括**配置实时读取**：写入只在 Web RPC 层被门控，插件自身每次执行都读取命名空间的解析值；
 - **卡片插槽本身**：卡片出现在 设置 → 插件 → Configurable 页并说明暴露状态，而不是静默消失。
 
 要让卡片可编辑，二选一：
-1. 在 `WEB_SETTINGS_NAMESPACES` 里加一行 `'dsh-plugin-template'`（`packages/host/apiproxy/src/api-proxy.ts`；改完需重建/重启 harness，更新检出新代码后会丢失）：
+1. 在 `WEB_SETTINGS_NAMESPACES` 里加一行 `'dsh-plugin-cost-insight'`（`packages/host/apiproxy/src/api-proxy.ts`；改完需重建/重启 harness，更新检出新代码后会丢失）：
 
 ```ts
 const WEB_SETTINGS_NAMESPACES = [
   'agent-loop', 'shell', 'locale', 'permission', 'ui-conversation', 'ui-theme', 'web-search-deepseek',
-  'dsh-plugin-template',   // ← 加这一行
+  'dsh-plugin-cost-insight',   // ← 加这一行
 ] as const
 ```
 
@@ -166,15 +166,15 @@ const WEB_SETTINGS_NAMESPACES = [
 
 - `package.json` 声明 `dsh.client: { platform: "web" }` + `exports["./client"]` → dsh 的 client-modules 扫描到后，把 `lib/client.js` 作为浏览器插件加载；
 - client 入口（`src/client/index.ts`）组装每个 UI 面的注册——配置卡片（`settings.plugin.item`）、侧栏底部按钮（`sidebar.footer.action`）、输入区 Dock（`conversation.input.dock`）——见 [UI 注册面索引](docs/ui-surfaces.zh.md)；
-- 配置卡片通过 `settingsScope` 服务绑定 `dsh-plugin-template` 命名空间：读快照、暂存草稿、保存时逐字段 `set`（自带 revision 围栏）；
+- 配置卡片通过 `settingsScope` 服务绑定 `dsh-plugin-cost-insight` 命名空间：读快照、暂存草稿、保存时逐字段 `set`（自带 revision 围栏）；
 - host 半边 `src/index.ts` 用 `installSettingsSection` 把配置注册成同名命名空间（cordis.yml 配置是 base 层），工具执行时惰性读取解析值 → 保存即生效；
 - 运行时 client 半边只依赖 `react`（浏览器平台模块表提供），其余一律走 ctx 服务，不 import 任何 `@deepseek-ai` 客户端包——改模板时请保持这个纪律。
 
 ## 发布
 
 - **npm**：`pnpm publish`（`files` 已包含构建产物与补丁，无需额外步骤）
-- **tarball**：`pnpm pack`，用户 `dsh plugin --profile demo add ./dsh-plugin-template-0.1.0.tgz`
-- **git**：用户 `dsh plugin add github:you/dsh-plugin-template`（配合上面的 `allowBuilds`）
+- **tarball**：`pnpm pack`，用户 `dsh plugin --profile demo add ./dsh-plugin-cost-insight-0.1.0.tgz`
+- **git**：用户 `dsh plugin add github:you/dsh-plugin-cost-insight`（配合上面的 `allowBuilds`）
 
 ## 相关文档
 

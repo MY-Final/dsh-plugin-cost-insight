@@ -1,5 +1,5 @@
 {
-  "name": "dsh-plugin-template",
+  "name": "dsh-plugin-cost-insight",
   "version": "0.1.0",
   "description": "A starter template for DeepSeek Harness (dsh) plugins: GUI-editable config, tools, events, services, hooks, and a browser client half in one installable bundle.",
   "type": "module",

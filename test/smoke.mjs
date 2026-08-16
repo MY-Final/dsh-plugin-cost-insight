@@ -1,5 +1,6 @@
-// 构建产物冒烟测试：验证主插件注册 greet 工具、配置经 settings 命名空间实时接线、
-// hook 权限门按配置拒绝/放行。
+// 构建产物冒烟测试：验证主插件注册 /cost 命令、配置经 settings 命名空间实时接线、
+// hook 权限门按配置拒绝/放行。注意：本插件不注册模板演示（greet 工具、/hello、/dsh-demo），
+// 避免与已安装的 dsh-plugin-template 重复注册。
 // 运行：node test/smoke.mjs（先 pnpm build）
 import assert from 'node:assert/strict'
 import { name, inject, apply } from '../lib/index.js'
@@ -8,12 +9,9 @@ import * as hook from '../lib/hook.js'
 // 最小可用的 ctx：只实现本插件用到的成员。
 // inject 存在但从不提供服务 —— 模拟"profile 里没有 settings 服务"，
 // 此时 installSettingsSection 不执行，配置回退到 composition entry。
-const registered = []
 const ctx = {
   tools: {
-    register(definition) {
-      registered.push(definition)
-    },
+    register() {},
   },
   on() {
     return () => {}
@@ -26,29 +24,23 @@ const ctx = {
   },
 }
 
-const config = { greeting: 'Hi', maxRetries: 5 }
+const config = { providers: [] }
 apply(ctx, config)
 
-assert.equal(name, 'dsh-plugin-template')
+assert.equal(name, 'dsh-plugin-cost-insight')
 assert.deepEqual(inject, ['tools'])
 
-const tool = registered.find((t) => t.name === 'greet')
-assert.ok(tool, 'greet tool should be registered')
-assert.equal(await tool.execute({ name: 'Ada' }), 'Hi, Ada!')
-assert.equal(typeof tool.presentResult, 'function', 'greet tool should define presentResult')
-
 // settings 接线：模拟 settings 服务存在（installSettingsSection 的依赖立即满足），
-// 断言 greet 工具实时读取命名空间的解析值，而不是静态配置。
+// 断言命名空间以 composition entry 为 base 层注册、/cost 命令注册到 commands 服务。
 {
-  let liveValue = { greeting: 'Hey', maxRetries: 3 }
   const settingsCtx = {
     settings: {
       register(ns, schema, options) {
-        assert.equal(ns, 'dsh-plugin-template')
+        assert.equal(ns, 'dsh-plugin-cost-insight')
         assert.equal(options.base, config, 'composition entry 应作为 base 层传入')
         return {
           get() {
-            return liveValue
+            return { providers: [] }
           },
           watch() {
             return () => {}
@@ -60,13 +52,12 @@ assert.equal(typeof tool.presentResult, 'function', 'greet tool should define pr
       return () => {}
     },
   }
-  const liveRegistered = []
   const registeredCommands = []
   const liveCtx = {
-    tools: { register(d) { liveRegistered.push(d) } },
+    tools: { register() {} },
     on() { return () => {} },
     effect() { return () => {} },
-    // 按注入名分发：installSettingsSection 注入 ['settings']，registerDemoCommand 注入 ['commands']。
+    // 按注入名分发：installSettingsSection 注入 ['settings']，命令注册注入 ['commands']。
     inject(names, callback) {
       if (names.includes('settings')) callback(settingsCtx)
       if (names.includes('commands')) callback({ commands: { register(d) { registeredCommands.push(d) } } })
@@ -74,13 +65,13 @@ assert.equal(typeof tool.presentResult, 'function', 'greet tool should define pr
     },
   }
   apply(liveCtx, config)
-  const liveTool = liveRegistered.find((t) => t.name === 'greet')
-  assert.ok(liveTool, 'greet tool should be registered')
-  assert.equal(await liveTool.execute({ name: 'Bob' }), 'Hey, Bob!')
-  liveValue = { greeting: 'Yo', maxRetries: 1 }
-  assert.equal(await liveTool.execute({ name: 'Bob' }), 'Yo, Bob!', '配置变更应实时生效')
-  assert.ok(registeredCommands.some((c) => c.name === 'dsh-demo'), 'demo command should be registered')
-  assert.ok(registeredCommands.some((c) => c.name === 'hello'), 'hello command should be registered')
+
+  const cost = registeredCommands.find((c) => c.name === 'cost')
+  assert.ok(cost, 'cost command should be registered')
+  assert.equal(registeredCommands.length, 1, '不应注册模板演示命令（hello/dsh-demo）')
+  const out = await cost.handler({ rawInput: '' })
+  assert.equal(out.kind, 'success')
+  assert.match(out.text, /未配置任何 provider/, 'cost 空配置应提示配置方法')
 }
 
 // hook 权限门：捕获注册的 tools/pre-execute 监听器，验证拒绝与放行两条路径。
