@@ -1,9 +1,12 @@
 // 构建产物冒烟测试：验证主插件注册 /cost 命令、配置经 settings 命名空间实时接线、
-// hook 权限门按配置拒绝/放行。注意：本插件不注册模板演示（greet 工具、/hello、/dsh-demo），
+// hook 权限门按配置拒绝/放行、queryBalance 的余额归一与失败信息。
+// 注意：本插件不注册模板演示（greet 工具、/hello、/dsh-demo），
 // 避免与已安装的 dsh-plugin-template 重复注册。
 // 运行：node test/smoke.mjs（先 pnpm build）
 import assert from 'node:assert/strict'
+import http from 'node:http'
 import { name, apply, estimateCost, formatCost } from '../lib/index.js'
+import { queryBalance } from '../lib/balance.js'
 import * as hook from '../lib/hook.js'
 
 // 最小可用的 ctx：只实现本插件用到的成员。
@@ -113,5 +116,40 @@ assert.deepEqual(denied, { kind: 'deny', reason: 'Tool "bash" is denied by polic
 
 const allowed = await listener({ name: 'greet' }, () => Promise.resolve({ kind: 'allow' }))
 assert.deepEqual(allowed, { kind: 'allow' })
+
+// queryBalance：对本地测试服务器发起真实请求。
+// 1) 余额字段是字符串（如 DeepSeek 的 "110.00"）时被 Number() 归一；
+// 2) 401 响应把状态码与响应体摘要拼进错误信息。
+const server = http.createServer((req, res) => {
+  if (req.url === '/ok') {
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify({ is_available: true, balance_infos: [{ currency: 'CNY', total_balance: '110.00' }] }))
+  } else if (req.url === '/denied') {
+    res.statusCode = 401
+    res.end(JSON.stringify({ error: { message: 'Authentication Fails, Your api key is invalid' } }))
+  } else {
+    res.statusCode = 404
+    res.end('not found')
+  }
+})
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+const { port } = server.address()
+const provider = (url) => ({
+  name: 't',
+  baseUrl: '',
+  apiKey: 'k',
+  request: { url: `http://127.0.0.1:${port}${url}` },
+  extractor: 'function(r) { return { remaining: r.balance_infos[0].total_balance, unit: r.balance_infos[0].currency }; }',
+})
+try {
+  const ok = await queryBalance(provider('/ok'))
+  assert.equal(ok.remaining, 110, '字符串余额应被 Number() 归一')
+  assert.equal(ok.unit, 'CNY')
+  const denied = await queryBalance(provider('/denied'))
+  assert.match(denied.error ?? '', /401/, '非 2xx 应报告状态码')
+  assert.match(denied.error ?? '', /Authentication/, '非 2xx 应附响应体摘要')
+} finally {
+  server.close()
+}
 
 console.log('smoke ok')

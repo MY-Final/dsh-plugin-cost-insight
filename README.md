@@ -25,7 +25,7 @@ providers:
         var info = response && response.balance_infos && response.balance_infos[0];
         return {
           isValid: !!(response && response.is_available),
-          remaining: info ? info.total_balance : 0,
+          remaining: info ? Number(info.total_balance) : 0,
           unit: 'CNY'
         };
       }
@@ -33,15 +33,17 @@ providers:
 ```
 
 - `{{baseUrl}}` / `{{apiKey}}` placeholders are substituted into the URL and header values.
-- The extractor receives the JSON response and returns `{ isValid, remaining, unit }`.
+- The extractor receives the JSON response and returns `{ isValid, remaining, unit }`; `remaining` is normalized through `Number()` first, so string balances like `"110.00"` pass too.
 - Works for DeepSeek official, newapi / sub2api / one-api style relays, and token-plan vendors (Volcano, Zhipu, MiniMax, Qwen, Kimi, opencode go) — configure each through the same template.
 
 Query balances from any session:
 
 ```
-/cost           # per-provider balances (M2 note appended)
+/cost           # per-provider balances
 /cost balance   # balances only
 ```
+
+> 🔑 A `查询失败（HTTP 401）` means the API key is wrong — most often the placeholder `sk-xxx` still sitting in cordis.yml. Fill in a real key under Settings → 消费洞察 and save; failure messages now include the vendor's own auth-error text for diagnosis.
 
 > ⚠️ **The extractor is configuration-as-code**: it runs with `new Function` inside the plugin process. Only use extractors from sources you trust; a request timeout is the only guard.
 

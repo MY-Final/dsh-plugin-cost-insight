@@ -52,7 +52,7 @@ providers:
         return {
           isValid: response.is_active || true,
           remaining: response.balance_infos && response.balance_infos[0]
-            ? response.balance_infos[0].total_balance
+            ? Number(response.balance_infos[0].total_balance)
             : 0,
           unit: 'CNY'
         };
@@ -67,12 +67,14 @@ providers:
 ### src/balance.ts
 
 - `queryBalance(provider, timeoutMs)`：拼请求 → fetch（Node 全局，零依赖）→ 跑 extractor → 归一化 `{ provider, isValid, remaining, unit, error? }`。
-- 失败（HTTP 非 2xx / JSON 解析失败 / extractor 抛错 / 超时）返回 error 分支，命令层展示。
+- 失败（HTTP 非 2xx / JSON 解析失败 / extractor 抛错 / 超时）返回 error 分支，命令层展示；非 2xx 附带响应体摘要，401 可看到厂商鉴权原文。
+- `remaining` 先经 `Number()` 归一：厂商把余额返回成字符串（DeepSeek 的 `"110.00"`）也能通过校验。
 
 ### /cost 命令（src/commands.ts）
 
-- `/cost`：各 provider 余额列表 + "会话费用统计将在 M2 提供"。
+- `/cost`：各 provider 余额列表（会话费用在 UI 账单条/徽标展示）。
 - `/cost balance`：仅余额。
+- API Key 为空或占位符 `sk-xxx` 时，失败行追加"到 设置 → 消费洞察 填真实 Key"的提示。
 
 ### 安全（extractor = 配置即代码）
 

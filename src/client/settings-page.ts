@@ -6,6 +6,7 @@
  * base 层），本页通过 settingsScope 绑定同名命名空间；draft 只进本地状态，
  * 保存是唯一写入点（整字段 set）。命名空间未对 Web 暴露时（harness 的
  * WEB_SETTINGS_NAMESPACES 白名单）渲染说明卡而不是消失。
+ * 样式与内置 Models 设置页同一套面板语言（dtpl-*，见 styles.ts）。
  * @module dsh-plugin-cost-insight/client/settings-page
  */
 
@@ -114,72 +115,90 @@ function SettingsPage({ scope }: { scope: SettingsScopeLike }): React.ReactEleme
   return React.createElement(
     'div',
     { className: 'dtpl-page' },
+    React.createElement('h2', { className: 'dtpl-title' }, '消费洞察'),
+    React.createElement('p', { className: 'dtpl-intro' }, '余额查询与会话费用估算：provider 用 cc-switch 式模板（request + extractor JS），价格按每 1M token 计价。改动保存在 设置 → 消费洞察 命名空间，立即生效。'),
     !snapshot.writable
-      ? React.createElement('p', { className: 'dtpl-status-body' }, '当前设置文档只读（memory 模式或只读 provider），改动无法保存。')
+      ? React.createElement('p', { className: 'dtpl-notice' }, '当前设置文档只读（memory 模式或只读 provider），改动无法保存。')
       : null,
+
     React.createElement(
       'section',
       { className: 'dtpl-section' },
       React.createElement('h3', { className: 'dtpl-section-title' }, '余额 Provider'),
-      React.createElement('p', { className: 'dtpl-section-hint' }, 'cc-switch 式通用模板：request + extractor JS。占位符 {{baseUrl}} / {{apiKey}} 会在请求时替换。'),
-      draft.providers.map((provider, index) => React.createElement(ProviderCard, {
-        key: provider.name || `provider-${index}`,
-        provider,
-        index,
-        onChange: (patch) => updateProvider(index, patch),
-        onRemove: () => update({ providers: draft.providers.filter((_, i) => i !== index) }),
-      })),
+      React.createElement('p', { className: 'dtpl-section-hint' }, '占位符 {{baseUrl}} / {{apiKey}} 在请求时替换；extractor 接收 JSON 响应，返回 { isValid, remaining, unit }。'),
       React.createElement(
-        'div',
-        null,
-        React.createElement('button', {
-          type: 'button',
-          className: 'dtpl-btn',
-          onClick: () => update({ providers: [...draft.providers, emptyProvider()] }),
-        }, '＋ 添加 provider'),
+        'ul',
+        { className: 'dtpl-card-list' },
+        draft.providers.map((provider, index) => React.createElement(ProviderCard, {
+          key: provider.name || `provider-${index}`,
+          provider,
+          index,
+          onChange: (patch) => updateProvider(index, patch),
+          onRemove: () => update({ providers: draft.providers.filter((_, i) => i !== index) }),
+        })),
       ),
+      React.createElement('button', {
+        type: 'button',
+        className: 'dtpl-btn dtpl-btn-add',
+        onClick: () => update({ providers: [...draft.providers, emptyProvider()] }),
+      }, '＋ 添加 provider'),
     ),
+
     React.createElement(
       'section',
       { className: 'dtpl-section' },
       React.createElement('h3', { className: 'dtpl-section-title' }, '价格表（会话费用估算）'),
-      React.createElement('p', { className: 'dtpl-section-hint' }, `价格按每 1M token 计，乘以上述倍率；估算按默认模型计价（投影不含模型信息）。`),
+      React.createElement('p', { className: 'dtpl-section-hint' }, '价格按每 1M token 计，乘以倍率；估算按默认模型计价（token 投影不含模型信息）。'),
       React.createElement(
         'div',
-        { className: 'dtpl-row' },
-        field('默认模型', React.createElement('input', {
-          className: 'dtpl-input',
-          value: draft.pricing.defaultModel,
-          onChange: (e) => update({ pricing: { ...draft.pricing, defaultModel: inputValue(e) } }),
-        })),
-        field('倍率', React.createElement('input', {
-          className: 'dtpl-input dtpl-number',
-          type: 'number',
-          step: '0.01',
-          value: String(draft.pricing.multiplier),
-          onChange: (e) => update({ pricing: { ...draft.pricing, multiplier: Number(inputValue(e)) || 0 } }),
-        })),
-        field('货币', React.createElement('input', {
-          className: 'dtpl-input',
-          value: draft.pricing.currency,
-          onChange: (e) => update({ pricing: { ...draft.pricing, currency: inputValue(e) } }),
-        })),
-      ),
-      modelsToRows(draft.pricing.models).map((row, index) => React.createElement(ModelRow, {
-        key: row.model || `model-${index}`,
-        row,
-        onChange: (patch) => updateModel(index, patch),
-        onRemove: () => {
-          const rows = modelsToRows(draft.pricing.models).filter((_, i) => i !== index)
-          update({ pricing: { ...draft.pricing, models: rowsToModels(rows) } })
-        },
-      })),
-      React.createElement(
-        'div',
-        null,
+        { className: 'dtpl-editor' },
+        React.createElement(
+          'div',
+          { className: 'dtpl-grid' },
+          field('默认模型', React.createElement('input', {
+            className: 'dtpl-input',
+            value: draft.pricing.defaultModel,
+            onChange: (e) => update({ pricing: { ...draft.pricing, defaultModel: inputValue(e) } }),
+          })),
+          field('倍率', React.createElement('input', {
+            className: 'dtpl-input',
+            type: 'number',
+            step: '0.01',
+            value: String(draft.pricing.multiplier),
+            onChange: (e) => update({ pricing: { ...draft.pricing, multiplier: Number(inputValue(e)) || 0 } }),
+          })),
+          field('货币', React.createElement('input', {
+            className: 'dtpl-input',
+            value: draft.pricing.currency,
+            onChange: (e) => update({ pricing: { ...draft.pricing, currency: inputValue(e) } }),
+          })),
+        ),
+        React.createElement(
+          'div',
+          { className: 'dtpl-table' },
+          React.createElement(
+            'div',
+            { className: 'dtpl-table-head', 'aria-hidden': 'true' },
+            React.createElement('span', null, '模型'),
+            React.createElement('span', null, '输入'),
+            React.createElement('span', null, '缓存读'),
+            React.createElement('span', null, '缓存写'),
+            React.createElement('span', null, '输出'),
+            React.createElement('span', null),
+          ),
+          modelsToRows(draft.pricing.models).map((row, index) => React.createElement(ModelRow, {
+            key: row.model || `model-${index}`,
+            row,
+            onChange: (patch) => updateModel(index, patch),
+            onRemove: () => {
+              const rows = modelsToRows(draft.pricing.models).filter((_, i) => i !== index)
+              update({ pricing: { ...draft.pricing, models: rowsToModels(rows) } })
+            },
+          })),
+        ),
         React.createElement('button', {
           type: 'button',
-          className: 'dtpl-btn',
+          className: 'dtpl-btn dtpl-btn-add',
           onClick: () => {
             const rows = [...modelsToRows(draft.pricing.models), { model: '', price: { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 } }]
             update({ pricing: { ...draft.pricing, models: rowsToModels(rows) } })
@@ -187,21 +206,28 @@ function SettingsPage({ scope }: { scope: SettingsScopeLike }): React.ReactEleme
         }, '＋ 添加模型'),
       ),
     ),
+
     React.createElement(
       'section',
       { className: 'dtpl-section' },
       React.createElement('h3', { className: 'dtpl-section-title' }, '预算'),
-      field('单会话上限（留空 = 不限）', React.createElement('input', {
-        className: 'dtpl-input dtpl-number',
-        type: 'number',
-        step: '0.01',
-        value: draft.budget.perSession === undefined ? '' : String(draft.budget.perSession),
-        onChange: (e) => {
-          const text = inputValue(e)
-          update({ budget: text === '' ? {} : { perSession: Number(text) } })
-        },
-      })),
+      React.createElement('p', { className: 'dtpl-section-hint' }, '超过单会话上限时，账单条与花费徽标变警示色。'),
+      React.createElement(
+        'div',
+        { className: 'dtpl-editor' },
+        field('单会话上限（留空 = 不限）', React.createElement('input', {
+          className: 'dtpl-input',
+          type: 'number',
+          step: '0.01',
+          value: draft.budget.perSession === undefined ? '' : String(draft.budget.perSession),
+          onChange: (e) => {
+            const text = inputValue(e)
+            update({ budget: text === '' ? {} : { perSession: Number(text) } })
+          },
+        })),
+      ),
     ),
+
     React.createElement(
       'div',
       { className: 'dtpl-footer' },
@@ -224,7 +250,7 @@ function SettingsPage({ scope }: { scope: SettingsScopeLike }): React.ReactEleme
 
 // ---- 子组件 ----
 
-/** 一个 provider 的编辑卡片。 */
+/** 一个 provider 的编辑卡片：标题行 + 填充编辑器面。 */
 function ProviderCard(props: {
   provider: BalanceProviderConfig
   index: number
@@ -234,88 +260,105 @@ function ProviderCard(props: {
   const { provider, index, onChange, onRemove } = props
   const headersText = Object.entries(provider.request.headers ?? {})
     .map(([key, value]) => `${key}: ${value}`).join('\n')
+  const keyMissing = provider.apiKey.trim() === '' || provider.apiKey.trim() === 'sk-xxx'
   return React.createElement(
-    'div',
+    'li',
     { className: 'dtpl-card' },
     React.createElement(
       'div',
       { className: 'dtpl-card-head' },
-      React.createElement('span', { className: 'dtpl-card-title' }, `Provider ${index + 1}`),
-      React.createElement('button', { type: 'button', className: 'dtpl-btn dtpl-btn-danger', onClick: onRemove }, '删除'),
+      React.createElement('span', { className: 'dtpl-card-title' }, provider.name || `Provider ${index + 1}`),
+      React.createElement('span', { className: 'dtpl-card-tag' }, 'cc-switch 模板'),
+      React.createElement('button', {
+        type: 'button',
+        className: 'dtpl-btn dtpl-btn-sm dtpl-btn-danger',
+        onClick: onRemove,
+      }, '删除'),
     ),
     React.createElement(
       'div',
-      { className: 'dtpl-row' },
-      field('名称', React.createElement('input', {
-        className: 'dtpl-input', value: provider.name,
-        onChange: (e) => onChange({ name: inputValue(e) }),
-      })),
-      field('Base URL', React.createElement('input', {
-        className: 'dtpl-input', value: provider.baseUrl,
-        onChange: (e) => onChange({ baseUrl: inputValue(e) }),
-      })),
+      { className: 'dtpl-editor' },
+      React.createElement(
+        'div',
+        { className: 'dtpl-grid' },
+        field('名称', React.createElement('input', {
+          className: 'dtpl-input', value: provider.name,
+          onChange: (e) => onChange({ name: inputValue(e) }),
+        })),
+        field('Base URL', React.createElement('input', {
+          className: 'dtpl-input', value: provider.baseUrl,
+          onChange: (e) => onChange({ baseUrl: inputValue(e) }),
+        })),
+        field('单位', React.createElement('input', {
+          className: 'dtpl-input', value: provider.unit ?? 'USD',
+          onChange: (e) => onChange({ unit: inputValue(e) }),
+        })),
+      ),
+      React.createElement(
+        'div',
+        { className: 'dtpl-grid' },
+        field('请求 URL', React.createElement('input', {
+          className: 'dtpl-input', value: provider.request.url,
+          onChange: (e) => onChange({ request: { ...provider.request, url: inputValue(e) } }),
+        })),
+        field('方法', React.createElement('input', {
+          className: 'dtpl-input', value: provider.request.method ?? 'GET',
+          onChange: (e) => onChange({ request: { ...provider.request, method: inputValue(e) } }),
+        })),
+      ),
       field('API Key', React.createElement('input', {
         className: 'dtpl-input', value: provider.apiKey, type: 'password',
         onChange: (e) => onChange({ apiKey: inputValue(e) }),
       })),
-    ),
-    React.createElement(
-      'div',
-      { className: 'dtpl-row' },
-      field('请求 URL', React.createElement('input', {
-        className: 'dtpl-input', value: provider.request.url,
-        onChange: (e) => onChange({ request: { ...provider.request, url: inputValue(e) } }),
+      keyMissing
+        ? React.createElement('p', { className: 'dtpl-field-warn' }, '占位符 API Key（sk-xxx / 空）会导致 /cost 查询 401——填入真实 Key。')
+        : null,
+      field('请求头（每行 "Key: Value"）', React.createElement('textarea', {
+        className: 'dtpl-textarea', value: headersText,
+        onChange: (e: { target: unknown }) => onChange({ request: { ...provider.request, headers: parseHeaders(inputValue(e)) } }),
       })),
-      field('方法', React.createElement('input', {
-        className: 'dtpl-input', value: provider.request.method ?? 'GET',
-        onChange: (e) => onChange({ request: { ...provider.request, method: inputValue(e) } }),
-      })),
-      field('单位', React.createElement('input', {
-        className: 'dtpl-input', value: provider.unit ?? 'USD',
-        onChange: (e) => onChange({ unit: inputValue(e) }),
+      field('Extractor（JS 函数源码）', React.createElement('textarea', {
+        className: 'dtpl-textarea dtpl-code', value: provider.extractor,
+        onChange: (e: { target: unknown }) => onChange({ extractor: inputValue(e) }),
       })),
     ),
-    field('请求头（每行 "Key: Value"）', React.createElement('textarea', {
-      className: 'dtpl-textarea', value: headersText,
-      onChange: (e: { target: unknown }) => onChange({ request: { ...provider.request, headers: parseHeaders(inputValue(e)) } }),
-    })),
-    field('Extractor（JS 函数源码）', React.createElement('textarea', {
-      className: 'dtpl-textarea', value: provider.extractor,
-      onChange: (e: { target: unknown }) => onChange({ extractor: inputValue(e) }),
-    })),
   )
 }
 
-/** 价格表一行（模型名 + 四档单价）。 */
+/** 价格表一行：模型名 + 四档单价 + 删除。 */
 function ModelRow(props: {
   row: ModelRow
   onChange: (patch: Partial<ModelRow>) => void
   onRemove: () => void
 }): React.ReactElement {
   const { row, onChange, onRemove } = props
-  const numberField = (key: keyof ModelPrice, label: string): React.ReactElement => field(label, React.createElement('input', {
-    className: 'dtpl-input dtpl-number',
+  const numberField = (key: keyof ModelPrice): React.ReactElement => React.createElement('input', {
+    className: 'dtpl-input',
     type: 'number',
     step: '0.01',
     value: String(row.price[key]),
+    'aria-label': key,
     onChange: (e) => onChange({ price: { ...row.price, [key]: Number(inputValue(e)) || 0 } }),
-  }))
+  })
   return React.createElement(
     'div',
-    { className: 'dtpl-card' },
-    React.createElement(
-      'div',
-      { className: 'dtpl-row' },
-      field('模型', React.createElement('input', {
-        className: 'dtpl-input', value: row.model,
-        onChange: (e) => onChange({ model: inputValue(e) }),
-      })),
-      numberField('input', '输入'),
-      numberField('cacheRead', '缓存读'),
-      numberField('cacheWrite', '缓存写'),
-      numberField('output', '输出'),
-      React.createElement('button', { type: 'button', className: 'dtpl-btn dtpl-btn-danger', onClick: onRemove }, '删'),
-    ),
+    { className: 'dtpl-table-row' },
+    React.createElement('input', {
+      className: 'dtpl-input',
+      value: row.model,
+      'aria-label': '模型',
+      onChange: (e) => onChange({ model: inputValue(e) }),
+    }),
+    numberField('input'),
+    numberField('cacheRead'),
+    numberField('cacheWrite'),
+    numberField('output'),
+    React.createElement('button', {
+      type: 'button',
+      className: 'dtpl-btn dtpl-btn-sm dtpl-btn-icon',
+      'aria-label': '删除该模型',
+      onClick: onRemove,
+    }, '×'),
   )
 }
 
@@ -365,7 +408,7 @@ function emptyProvider(): BalanceProviderConfig {
     baseUrl: '',
     apiKey: '',
     request: { url: '{{baseUrl}}/user/balance', method: 'GET', headers: { Authorization: 'Bearer {{apiKey}}' } },
-    extractor: 'function(response) {\n  return { isValid: true, remaining: response.balance ?? 0, unit: "USD" };\n}',
+    extractor: 'function(response) {\n  return { isValid: true, remaining: Number(response.balance) || 0, unit: "USD" };\n}',
     unit: 'USD',
   }
 }

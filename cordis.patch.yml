@@ -21,7 +21,7 @@
                 var info = response && response.balance_infos && response.balance_infos[0];
                 return {
                   isValid: !!(response && response.is_available),
-                  remaining: info ? info.total_balance : 0,
+                  remaining: info ? Number(info.total_balance) : 0,
                   unit: 'CNY'
                 };
               }

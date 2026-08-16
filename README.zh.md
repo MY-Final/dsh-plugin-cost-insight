@@ -25,7 +25,7 @@ providers:
         var info = response && response.balance_infos && response.balance_infos[0];
         return {
           isValid: !!(response && response.is_available),
-          remaining: info ? info.total_balance : 0,
+          remaining: info ? Number(info.total_balance) : 0,
           unit: 'CNY'
         };
       }
@@ -33,15 +33,17 @@ providers:
 ```
 
 - `{{baseUrl}}` / `{{apiKey}}` 占位符在 URL 与 header 值里替换。
-- extractor 接收 JSON 响应，返回 `{ isValid, remaining, unit }`。
+- extractor 接收 JSON 响应，返回 `{ isValid, remaining, unit }`；`remaining` 会先经 `Number()` 归一（字符串余额如 `"110.00"` 也能通过）。
 - 适配 DeepSeek 官方、newapi / sub2api / one-api 系中转，以及 token plan 厂商（火山、智谱、MiniMax、Qwen、Kimi、opencode go）——都走同一个模板。
 
 在任意会话里查询：
 
 ```
-/cost           # 各 provider 余额（附 M2 预告）
+/cost           # 各 provider 余额
 /cost balance   # 仅余额
 ```
+
+> 🔑 查询失败（HTTP 401）＝ API Key 不对：最常见原因是 cordis.yml 里还是占位符 `sk-xxx`。到 设置 → 消费洞察 填入真实 Key 保存即可；失败信息现在会附上厂商返回的鉴权错误原文，方便排查。
 
 > ⚠️ **extractor 是"配置即代码"**：它用 `new Function` 在插件进程内执行。只放信任来源的 extractor；仅有请求超时防护。
 

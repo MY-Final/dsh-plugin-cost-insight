@@ -46,7 +46,7 @@ declare module '@deepseek-ai/cordis' {
 }
 
 /**
- * 注册 /cost 命令：查询各 provider 余额（M2 起追加会话费用统计与导出）。
+ * 注册 /cost 命令：查询各 provider 余额。
  * @param ctx - 插件上下文。
  * @param getProviders - 惰性读取当前配置的 providers（settings 命名空间解析值）。
  */
@@ -57,27 +57,38 @@ export function registerCostCommand(
   ctx.inject(['commands'], (commandCtx) => {
     commandCtx.commands.register({
       name: 'cost',
-      description: '查询各 provider 余额（M2 起含会话费用统计）。',
+      description: '查询各 provider 余额（配置见 设置 → 消费洞察）。',
       handler: async ({ rawInput }) => {
         const providers = getProviders()
         if (providers.length === 0) {
           return {
             kind: 'success',
-            text: '未配置任何 provider：在 cordis.yml 的 dsh-plugin-cost-insight.providers 里添加（模板见 docs/PLAN.md）。',
+            text: '未配置任何 provider：在 设置 → 消费洞察 或 cordis.yml 的 dsh-plugin-cost-insight.providers 里添加（模板见 docs/PLAN.md）。',
           }
         }
         const lines = (await Promise.all(providers.map((provider) => queryBalance(provider))))
-          .map((result) => result.error !== undefined
-            ? `- ${result.provider}: 查询失败（${result.error}）`
-            : `- ${result.provider}: ${result.remaining} ${result.unit}${result.isValid ? '' : '（标记无效）'}`)
+          .map((result) => {
+            if (result.error !== undefined) {
+              const hint = missingKeyHint(providers.find((p) => p.name === result.provider))
+              return `- ${result.provider}: 查询失败（${result.error}）${hint}`
+            }
+            return `- ${result.provider}: ${result.remaining} ${result.unit}${result.isValid ? '' : '（标记无效）'}`
+          })
         const bare = rawInput.trim().length === 0
         return {
           kind: 'success',
-          text: bare
-            ? `【余额】\n${lines.join('\n')}\n\n会话费用统计将在 M2 提供。`
-            : lines.join('\n'),
+          text: bare ? `【余额】\n${lines.join('\n')}` : lines.join('\n'),
         }
       },
     })
   })
+}
+
+/** provider 的 API Key 是空或占位符时，给出可操作的排查提示。 */
+function missingKeyHint(provider: BalanceProviderConfig | undefined): string {
+  const key = provider?.apiKey?.trim() ?? ''
+  if (key === '' || key === 'sk-xxx') {
+    return '（API Key 未配置或仍是占位符——到 设置 → 消费洞察 填入真实 Key）'
+  }
+  return ''
 }
