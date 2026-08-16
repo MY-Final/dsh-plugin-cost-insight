@@ -6,10 +6,12 @@
  *
  * 与插件模板共存：不注册模板的演示内容（greet 工具、/hello、/dsh-demo 命令），
  * 避免与已安装的 dsh-plugin-template 重复注册（工具名/命令名必须唯一）。
+ * M1 无浏览器半边（/cost 是纯 host 命令，余额走文本输出）；M2 起按需引入
+ * 账单条 / 花费徽标 / 预算 toast（从模板取对应槽位组件）。
  *
- * 配置通过 settings 命名空间（ctx.settings）接线，浏览器半边的配置卡片
- * （见 src/client/）写入用户设置文档，本插件实时读取。注意：Web 设置面板的
- * 可见性受 harness 的 WEB_SETTINGS_NAMESPACES 白名单限制，只影响卡片的可编辑性。
+ * 配置通过 settings 命名空间（ctx.settings）接线：浏览器半边配置卡片被移除
+ * （M1 provider 配置走 cordis.yml，M2 提供配置页）。注意：Web 设置面板的
+ * 可见性受 harness 的 WEB_SETTINGS_NAMESPACES 白名单限制。
  *
  * 加载契约：模块具名导出 apply(ctx, config)；框架在依赖（inject）就绪后调用 apply，
  * 卸载时自动回收所有通过 ctx 注册的监听器与 effect，无需手动移除。
@@ -24,9 +26,6 @@ import type { BalanceProviderConfig } from './balance.ts'
 
 /** 插件显示名（诊断日志中使用）。 */
 export const name = 'dsh-plugin-cost-insight'
-
-/** 依赖的服务：tools 就绪后本插件才会加载。 */
-export const inject = ['tools']
 
 /** 插件配置：部署时通过 cordis.yml 覆盖，也可以在 GUI 设置里改。 */
 export interface Config {

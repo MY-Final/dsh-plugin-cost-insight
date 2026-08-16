@@ -62,13 +62,13 @@ The shipped `cordis.patch.yml` carries a DeepSeek example — set a real `apiKey
 
 ## Local development
 
-From a [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) source checkout, load the host half directly:
+From a [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) source checkout, load the plugin directly (M1 has no browser UI — `/cost` is a plain host command):
 
 ```sh
 pnpm dsh web --patch /absolute/path/to/dsh-plugin-cost-insight/dev/cordis.yml
 ```
 
-To test the browser half, install into a profile instead. Inside this repo:
+Inside this repo:
 
 ```sh
 pnpm install --ignore-workspace   # required when the repo sits inside a harness checkout
@@ -85,7 +85,6 @@ src/
 ├── balance.ts      # cc-switch-style balance query (request + extractor, timeout)
 ├── commands.ts     # /cost command
 ├── service.ts      # optional example Service (disabled by default)
-├── hook.ts         # optional example hook permission gate (disabled by default)
-└── client/         # browser half (slot demos kept from the template; M2 prunes)
+└── hook.ts         # optional example hook permission gate (disabled by default)
 docs/PLAN.md        # design doc (modules, decisions, M1/M2/M3)
 ```

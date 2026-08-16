@@ -62,7 +62,7 @@ dsh plugin --profile web add /path/to/dsh-plugin-cost-insight   # 或 github:MY-
 
 ## 本地开发
 
-在 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 源码根目录直接加载 host 半边：
+在 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 源码根目录直接加载插件（M1 无浏览器 UI——`/cost` 是纯 host 命令）：
 
 ```sh
 pnpm dsh web --patch /absolute/path/to/dsh-plugin-cost-insight/dev/cordis.yml
@@ -85,7 +85,6 @@ src/
 ├── balance.ts      # cc-switch 式余额查询（request + extractor，超时）
 ├── commands.ts     # /cost 命令
 ├── service.ts      # 可选示例 Service（默认注释启用）
-├── hook.ts         # 可选示例 hook 权限门（默认注释启用）
-└── client/         # 浏览器半边（保留模板插槽演示，M2 清理）
+└── hook.ts         # 可选示例 hook 权限门（默认注释启用）
 docs/PLAN.md        # 设计文档（模块拆解、决策、M1/M2/M3）
 ```

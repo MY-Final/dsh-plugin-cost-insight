@@ -3,7 +3,7 @@
 // 避免与已安装的 dsh-plugin-template 重复注册。
 // 运行：node test/smoke.mjs（先 pnpm build）
 import assert from 'node:assert/strict'
-import { name, inject, apply } from '../lib/index.js'
+import { name, apply } from '../lib/index.js'
 import * as hook from '../lib/hook.js'
 
 // 最小可用的 ctx：只实现本插件用到的成员。
@@ -28,7 +28,6 @@ const config = { providers: [] }
 apply(ctx, config)
 
 assert.equal(name, 'dsh-plugin-cost-insight')
-assert.deepEqual(inject, ['tools'])
 
 // settings 接线：模拟 settings 服务存在（installSettingsSection 的依赖立即满足），
 // 断言命名空间以 composition entry 为 base 层注册、/cost 命令注册到 commands 服务。
